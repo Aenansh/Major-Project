@@ -1,17 +1,4 @@
-"""Module 1: Elliptic temporal-graph ingestion and reproducible exports.
-
-Local VS Code usage, from the repository root:
-    python notebooks/01_ingestion_pipeline.py
-
-Default input:  <project_root>/data/raw/
-Default output: <project_root>/data/processed/
-
-Overrides:
-    python notebooks/01_ingestion_pipeline.py --data-dir /other/raw --processed-dir /other/output
-    python notebooks/01_ingestion_pipeline.py --message-mode source
-
-Install requirements before running (PyTorch, PyTorch Geometric, pandas,
-NumPy, scikit-learn, pyarrow, joblib).
+"""Elliptic temporal-graph ingestion and reproducible exports.
 
 The default empty message is a deliberate data-interface baseline, not proof
 that the downstream model is leakage-free. Elliptic's per-step event order is
@@ -19,7 +6,6 @@ unknown and must be handled explicitly during temporal training.
 """
 from __future__ import annotations
 
-import argparse
 import json
 from pathlib import Path
 
@@ -35,14 +21,6 @@ EXPECTED_EDGES = 234_355
 N_FEATURES = 165
 TRAIN_END, VAL_END, TEST_END = 29, 34, 49
 FEATURE_COLS = [f"feature_{i}" for i in range(1, N_FEATURES + 1)]
-
-# Resolve paths relative to the repository, not the VS Code terminal cwd.
-# Supports script located either at repository root or within notebooks/.
-SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent if SCRIPT_DIR.name == "notebooks" else SCRIPT_DIR
-DEFAULT_DATA_DIR = PROJECT_ROOT / "data" / "raw"
-DEFAULT_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
-
 
 def require(condition: bool, message: str) -> None:
     """Explicit validations remain active even if Python is run with -O."""
@@ -243,23 +221,3 @@ def prepare(data_dir: Path, processed_dir: Path, message_mode: str, strict_count
     print('Artifacts saved and verified in:', processed_dir)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--data-dir', type=Path,
-                        default=DEFAULT_DATA_DIR)
-    parser.add_argument('--processed-dir', type=Path,
-                        default=DEFAULT_PROCESSED_DIR)
-    parser.add_argument('--message-mode', choices=['empty', 'source'], default='empty',
-                        help='empty is safer baseline; source is an experimental alternative')
-    parser.add_argument('--allow-nonstandard-counts', action='store_true',
-                        help='for small synthetic tests; still expects all 49 time steps')
-    args = parser.parse_args()
-    print(f"Project root: {PROJECT_ROOT}")
-    print(f"Reading raw data from: {args.data_dir.resolve()}")
-    print(f"Saving processed data to: {args.processed_dir.resolve()}")
-    prepare(args.data_dir, args.processed_dir, args.message_mode,
-            strict_counts=not args.allow_nonstandard_counts)
-
-
-if __name__ == '__main__':
-    main()

@@ -22,9 +22,15 @@ venv/
 .coverage.*
 /htmlcov/
 
-# Local datasets and ingestion outputs
-/data/raw/
-/data/processed/
+# Local datasets, models, and experiment outputs
+/data/raw/*
+/data/processed/*
+/data/synthetic/*
+/checkpoints/*
+/outputs/metrics/*
+/outputs/plots/*
+/outputs/predictions/*
+!.gitkeep
 
 # OS metadata
 .DS_Store
