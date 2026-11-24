@@ -1,5 +1,3 @@
-"""Reserved for negative sampling of temporal interactions."""
-
 """Negative sampling for temporal graph interactions."""
 
 from collections import defaultdict
@@ -17,11 +15,18 @@ def sample_negative_destinations(
     """
     Sample one negative destination for each positive event.
 
+    Pass all positive events for the time step so every observed edge can
+    be excluded. Transaction edges are directed. A reverse edge is eligible
+    if that direction was not observed, even though neighbor history records
+    both endpoints as neighbors.
+
     Rules:
         - Candidate destination belongs to the event's time step.
         - Candidate cannot equal the source node.
         - Candidate cannot form an observed positive edge
           from the same source at this time step.
+
+    The seed and event time step determine the random stream for each call.
 
     Returns:
         torch.LongTensor of shape [num_events].
@@ -54,14 +59,12 @@ def sample_negative_destinations(
     ):
         raise ValueError("Event contains an invalid node ID")
 
-    candidate_nodes = torch.where(
-        node_steps == step
-    )[0].tolist()
-
-    if not candidate_nodes:
+    if not ((node_steps[src] == step) & (node_steps[dst] == step)).all():
         raise ValueError(
-            f"No candidate nodes at time step {step}"
+            "Positive event endpoints must belong to the event time step"
         )
+
+    candidate_nodes = torch.where(node_steps == step)[0].tolist()
 
     # Collect all observed outgoing destinations.
     positive_destinations = defaultdict(set)
@@ -69,7 +72,8 @@ def sample_negative_destinations(
     for u, v in zip(src, dst):
         positive_destinations[u].add(v)
 
-    rng = np.random.default_rng(seed)
+    # Encode signed int64 timestamps as unsigned values for NumPy's seed.
+    rng = np.random.default_rng([seed, step % (2**64)])
 
     negative_dst = []
     valid_cache = {}
