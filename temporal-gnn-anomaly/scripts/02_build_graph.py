@@ -34,7 +34,8 @@ def process_split(
     total_events = 0
     total_batches = 0
     total_steps = 0
-    historical_edges_seen = 0
+    total_historical_edges_returned = 0
+    historical_edges_seen = history.loader.cur_e_id
 
     for step, group in iter_time_steps(data):
 
@@ -77,6 +78,7 @@ def process_split(
             n_id, edge_index, e_id = history.query(
                 node_ids, step
             )
+            total_historical_edges_returned += e_id.numel()
 
             assert torch.all(batch.t == step)
             assert batch.num_events <= batch_size
@@ -118,6 +120,7 @@ def process_split(
         "events": total_events,
         "batches": total_batches,
         "time_steps": total_steps,
+        "historical_edges_returned": total_historical_edges_returned,
     }
 
 
